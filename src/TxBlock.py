@@ -18,18 +18,16 @@ if __name__ == "__main__":
 
     Tx1 = Tx()
     Tx1.add_input(pu1,1)
+    Tx1.add_output(pu2, 1)
     Tx1.sign(pr1)
 
     print(Tx1.is_valid())
 
-    message = b"Some text"
-    sig = sign(message,pr1)
-
-    savefile = open("save.dat", "wb")
+    savefile = open("tx.dat", "wb")
     pickle.dump(Tx1, savefile)
     savefile.close()
 
-    loadfile = open("save.dat", "rb")
+    loadfile = open("tx.dat", "rb")
     newTx = pickle.load(loadfile)
 
     print(newTx.is_valid())
