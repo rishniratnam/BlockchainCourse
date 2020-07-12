@@ -3,24 +3,39 @@ from Signatures import generate_keys, sign, verify
 from Transaction import Tx
 import pickle
 
+reward = 25.0
+
 
 class TxBlock (CBlock):
     def __init__(self, previousBlock):
         super(TxBlock, self).__init__([], previousBlock)
     def addTx(self, Tx_in):
         self.data.append(Tx_in)
+    def __count_totals(self):
+        total_in = 0
+        total_out = 0
+        for tx in self.data:
+            for addr, amt in tx.inputs:
+                total_in += amt
+            for addr, amt in tx.outputs:
+                total_out += amt
+        return total_in, total_out
     def is_valid(self):
         if not super(TxBlock, self).is_valid():
             return False
         for tx in self.data:
             if not tx.is_valid():
                 return False
+        total_in , total_out = self.__count_totals()
+        if total_out - total_in - reward > 0.0000000000000001:
+            return False
         return True
 
 if __name__ == "__main__":
     pr1, pu1 = generate_keys()
     pr2, pu2 = generate_keys()
     pr3, pu3 = generate_keys()
+    pr4, pu4 = generate_keys()
 
     Tx1 = Tx()
     Tx1.add_input(pu1,1)
@@ -95,3 +110,40 @@ if __name__ == "__main__":
             print("ERROR! Bad block verified.")
         else:
             print("Success! Bad blocks detected")
+
+    # Test mining rewards and tx fees
+    B3 = TxBlock(B2)
+    B3.addTx(Tx2)
+    B3.addTx(Tx3)
+    B3.addTx(Tx4)
+    Tx6 = Tx()
+    Tx6.add_output(pu4,25)
+    B3.addTx(Tx6)
+    if B3.is_valid():
+        print("Success! Block reward succeeds")
+    else:
+        print("ERROR! Block reward fail")
+
+    B4 = TxBlock(B3)
+    B4.addTx(Tx2)
+    B4.addTx(Tx3)
+    B4.addTx(Tx4)
+    Tx7 = Tx()
+    Tx7.add_output(pu4,25.2)
+    B4.addTx(Tx7)
+    if B4.is_valid():
+        print("Success! Tx fee and block reward succeeds")
+    else:
+        print("ERROR! Tx fee aand block reward fail")
+
+    B5 = TxBlock(B4)
+    B5.addTx(Tx2)
+    B5.addTx(Tx3)
+    B5.addTx(Tx4)
+    Tx8 = Tx()
+    Tx8.add_output(pu4, 26.2)
+    B5.addTx(Tx8)
+    if not B5.is_valid():
+        print("Success! Greedy miner detected")
+    else:
+        print("ERROR! Greedy minor not detected")

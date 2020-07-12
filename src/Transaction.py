@@ -52,8 +52,9 @@ class Tx:
                 return False
             total_out += amount
 
-        if total_out > total_in:
-            return False
+        # Check that the output does not exceed the input for the transaction
+        #if total_out > total_in:
+        #    return False
 
         return True
 
