@@ -1,12 +1,20 @@
 from Blockchain import CBlock
 from Signatures import generate_keys, sign, verify
 from Transaction import Tx
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 import pickle
+import time
+import random
 
 reward = 25.0
+leading_zeros = 2
+next_char_limit = 50
+min_compute_time = 60
 
 
 class TxBlock (CBlock):
+    nonce = "AAAAAAA"
     def __init__(self, previousBlock):
         super(TxBlock, self).__init__([], previousBlock)
     def addTx(self, Tx_in):
@@ -20,6 +28,7 @@ class TxBlock (CBlock):
             for addr, amt in tx.outputs:
                 total_out += amt
         return total_in, total_out
+
     def is_valid(self):
         if not super(TxBlock, self).is_valid():
             return False
@@ -30,6 +39,24 @@ class TxBlock (CBlock):
         if total_out - total_in - reward > 0.0000000000000001:
             return False
         return True
+
+    def good_nonce(self):
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(bytes(str(self.data), 'utf-8'))
+        digest.update(bytes(str(self.previousHash), 'utf-8'))
+        digest.update(bytes(str(self.nonce), 'utf-8'))
+        this_hash = digest.finalize()
+        if this_hash[:leading_zeros] != bytes(''.join(['\x4f' for i in range(leading_zeros)]), 'utf8'):
+            return False
+        return int(this_hash[leading_zeros]) < next_char_limit
+
+
+    def find_nonce(self):
+        for i in range(1000000):
+            self.nonce = ''.join([chr(random.randint(0,255)) for j in range(10*leading_zeros)])
+            if self.good_nonce():
+                return self.nonce
+        return None
 
 if __name__ == "__main__":
     pr1, pu1 = generate_keys()
@@ -79,6 +106,16 @@ if __name__ == "__main__":
     Tx4.sign(pr3)
     Tx4.sign(pr1)
     B1.addTx(Tx4)
+    start = time.time()
+    print(B1.find_nonce())
+    elapsed = time.time() - start
+    print("elapsed time: " + str(elapsed) + "s.")
+    if elapsed < min_compute_time:
+        print("Error! Mining is too fast")
+    if B1.good_nonce:
+        print("Success! Nonce is good!")
+    else:
+        print("Error! Bad nonce")
 
     B1.is_valid()
     root.is_valid()
@@ -96,6 +133,11 @@ if __name__ == "__main__":
             print ("Success! Valid block")
         else:
             print ("Error! Bad block")
+
+    if B1.good_nonce():
+        print("Success! Nonce is good after save and load!")
+    else:
+        print("Bad nonce at load")
 
     B2 = TxBlock(B1)
     Tx5 = Tx()
