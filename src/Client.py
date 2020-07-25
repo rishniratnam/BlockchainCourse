@@ -42,22 +42,3 @@ if __name__=="__main__":
     sendBlock('10.0.0.3', Tx2)
 
 
-
-
-'''
-import socket
-
-ip_addr = '192.168.0.39'
-port = 5005
-BUFFER_SIZE = 1024
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-s.connect((ip_addr, port))
-
-s.send("Hello World!")
-data = s.recv(BUFFER_SIZE)
-print("REc'd:" + data)
-
-s.close
-'''
